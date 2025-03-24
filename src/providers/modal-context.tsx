@@ -2,14 +2,17 @@
 
 import React, { createContext, useContext, useState } from "react";
 
+// Define a more specific type for modal data
+type ModalData = unknown;
+
 interface ModalContextType {
-  data: Record<string, any>;
+  data: Record<string, ModalData>;
   isOpen: Record<string, boolean>;
   canClose: Record<string, boolean>;
   setCanClose: (modalId: string, canClose: boolean) => void;
   setOpen: (
     modal: React.ReactNode,
-    fetchdata?: () => Promise<any>,
+    fetchdata?: () => Promise<ModalData>,
     modalId?: string
   ) => void;
   setClose: (modalId?: string) => void;
@@ -30,13 +33,13 @@ interface ModalProviderProps {
 
 const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState<Record<string, boolean>>({});
-  const [data, setData] = useState<Record<string, any>>({});
+  const [data, setData] = useState<Record<string, ModalData>>({});
   const [modals, setModals] = useState<Record<string, React.ReactNode>>({});
   const [canClose, setCanCloseState] = useState<Record<string, boolean>>({});
 
   const setOpen = async (
     modal: React.ReactNode,
-    fetchdata?: () => Promise<any>,
+    fetchdata?: () => Promise<ModalData>,
     modalId: string = "default"
   ) => {
     if (fetchdata) {

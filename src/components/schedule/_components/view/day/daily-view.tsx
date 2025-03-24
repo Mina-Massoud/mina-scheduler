@@ -38,14 +38,14 @@ const itemVariants = {
 };
 
 const pageTransitionVariants = {
-  enter: (direction: number) => ({
+  enter: () => ({
     opacity: 0,
   }),
   center: {
     x: 0,
     opacity: 1,
   },
-  exit: (direction: number) => ({
+  exit: () => ({
     opacity: 0,
     transition: {
       opacity: { duration: 0.2, ease: "easeInOut" },
@@ -164,7 +164,6 @@ export default function DailyView({
   const [detailedHour, setDetailedHour] = useState<string | null>(null);
   const [timelinePosition, setTimelinePosition] = useState<number>(0);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [direction, setDirection] = useState<number>(0);
   const { setOpen } = useModal();
   const { getters, handlers } = useScheduler();
 
@@ -275,14 +274,12 @@ export default function DailyView({
   }
 
   const handleNextDay = useCallback(() => {
-    setDirection(1);
     const nextDay = new Date(currentDate);
     nextDay.setDate(currentDate.getDate() + 1);
     setCurrentDate(nextDay);
   }, [currentDate]);
 
   const handlePrevDay = useCallback(() => {
-    setDirection(-1);
     const prevDay = new Date(currentDate);
     prevDay.setDate(currentDate.getDate() - 1);
     setCurrentDate(prevDay);
@@ -322,10 +319,10 @@ export default function DailyView({
           )}
         </div>
       </div>
-      <AnimatePresence initial={false} custom={direction} mode="wait">
+      <AnimatePresence initial={false} custom={0} mode="wait">
         <motion.div
           key={currentDate.toISOString()}
-          custom={direction}
+          custom={0}
           variants={pageTransitionVariants}
           initial="enter"
           animate="center"
@@ -340,7 +337,7 @@ export default function DailyView({
             <div className="all-day-events">
               <AnimatePresence initial={false}>
                 {dayEvents && dayEvents?.length
-                  ? dayEvents?.map((event, eventIndex) => {
+                  ? dayEvents?.map((event) => {
                       return (
                         <motion.div
                           key={event.id}
@@ -403,7 +400,7 @@ export default function DailyView({
                 ))}
                 <AnimatePresence initial={false}>
                   {dayEvents && dayEvents?.length
-                    ? dayEvents?.map((event, eventIndex) => {
+                    ? dayEvents?.map((event) => {
                         // Find which time group this event belongs to
                         let eventsInSamePeriod = 1;
                         let periodIndex = 0;
@@ -423,7 +420,6 @@ export default function DailyView({
                           maxWidth,
                           minWidth,
                           top,
-                          zIndex,
                         } = handlers.handleEventStyling(
                           event, 
                           dayEvents,

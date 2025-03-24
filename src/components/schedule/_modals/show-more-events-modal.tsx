@@ -1,13 +1,24 @@
 import EventStyled from "@/components/schedule/_components/view/event-component/event-styled";
 import { useModal } from "@/providers/modal-context";
 import { Event } from "@/types";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { CalendarIcon } from "lucide-react";
+
+// Define interface for modal data
+interface ShowMoreEventsModalData {
+  default?: {
+    dayEvents?: Event[];
+  };
+}
 
 export default function ShowMoreEventsModal() {
   const { data } = useModal();
-  console.log(data);
-  const dayEvents = data?.default?.dayEvents || [];
+  const typedData = data as ShowMoreEventsModalData | undefined;
+  
+  // Use useMemo to prevent unnecessary recalculations
+  const dayEvents = useMemo(() => {
+    return typedData?.default?.dayEvents || [];
+  }, [typedData]);
 
   const [events, setEvents] = useState<Event[]>(dayEvents);
 

@@ -109,7 +109,10 @@ export type startOfWeek = "sunday" | "monday";
 export interface CustomEventModal {
   CustomAddEventModal?: {
     title?: string;
-    CustomForm?: React.FC<{ register: any; errors: any }>;
+    CustomForm?: React.FC<{ 
+      register: Record<string, unknown>; 
+      errors: Record<string, unknown>; 
+    }>;
   };
 }
 

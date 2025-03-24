@@ -21,18 +21,41 @@ import { EventFormData, eventSchema, Variant, Event } from "@/types/index";
 import { useScheduler } from "@/providers/schedular-provider";
 import { v4 as uuidv4 } from "uuid"; // Use UUID to generate event IDs
 
+// Interface for modal data
+interface ModalData {
+  default?: Event;
+  startDate?: Date;
+  endDate?: Date;
+  variant?: Variant;
+  color?: string;
+}
+
 export default function AddEventModal({
   CustomAddEventModal,
 }: {
-  CustomAddEventModal?: React.FC<{ register: any; errors: any }>;
+  CustomAddEventModal?: React.FC<{ 
+    register: Record<string, unknown>; 
+    errors: Record<string, unknown>;
+  }>;
 }) {
   const { setClose, data } = useModal();
+  const typedData = data as ModalData | undefined;
+
+  // Ensure variant is a valid Variant type
+  const getVariant = (): Variant => {
+    if (typedData?.variant === "primary" || 
+        typedData?.variant === "success" || 
+        typedData?.variant === "danger" || 
+        typedData?.variant === "warning" || 
+        typedData?.variant === "default") {
+      return typedData.variant;
+    }
+    return "primary"; // Default fallback
+  };
 
   const [selectedColor, setSelectedColor] = useState<string>(
-    getEventColor(data?.variant || "primary")
+    getEventColor(getVariant())
   );
-
-  const typedData = data as { default: Event };
 
   const { handlers } = useScheduler();
 
@@ -40,8 +63,8 @@ export default function AddEventModal({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
     setValue,
+    formState: { errors },
   } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
@@ -49,26 +72,25 @@ export default function AddEventModal({
       description: "",
       startDate: new Date(),
       endDate: new Date(),
-      variant: data?.variant || "primary",
-      color: data?.color || "blue",
+      variant: getVariant(),
+      color: typedData?.color || "blue",
     },
   });
 
   // Reset the form on initialization
   useEffect(() => {
-    if (data?.default) {
-      const eventData = data?.default;
-      console.log("eventData", eventData);
+    if (typedData?.default) {
+      const eventData = typedData.default;
       reset({
         title: eventData.title,
         description: eventData.description || "",
         startDate: eventData.startDate,
         endDate: eventData.endDate,
         variant: eventData.variant || "primary",
-        color: eventData.color || "blue",
+        color: selectedColor,
       });
     }
-  }, [data, reset]);
+  }, [typedData, reset, selectedColor]);
 
   const colorOptions = [
     { key: "blue", name: "Blue" },
@@ -140,7 +162,10 @@ export default function AddEventModal({
   return (
     <form className="flex flex-col gap-4 p-4" onSubmit={handleSubmit(onSubmit)}>
       {CustomAddEventModal ? (
-        <CustomAddEventModal register={register} errors={errors} />
+        <CustomAddEventModal 
+          register={register as unknown as Record<string, unknown>}
+          errors={errors as unknown as Record<string, unknown>}
+        />
       ) : (
         <>
           <div className="grid gap-2">
@@ -169,8 +194,8 @@ export default function AddEventModal({
 
           <SelectDate
             data={{
-              startDate: data?.default?.startDate || new Date(),
-              endDate: data?.default?.endDate || new Date(),
+              startDate: typedData?.default?.startDate || new Date(),
+              endDate: typedData?.default?.endDate || new Date(),
             }}
             setValue={setValue}
           />
