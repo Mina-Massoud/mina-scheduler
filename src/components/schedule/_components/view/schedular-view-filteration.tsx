@@ -39,90 +39,144 @@ export default function SchedulerViewFilteration({
   classNames?: ClassNames;
 }) {
   const { setOpen } = useModal();
-  const [activeView, setActiveView] = useState<string>("day");
   const [clientSide, setClientSide] = useState(false);
-
-  console.log("activeView", activeView);
-
-  useEffect(() => {
-    setClientSide(true);
-  }, []);
-
-  const [isMobile, setIsMobile] = useState(
-    clientSide ? window.innerWidth <= 768 : false
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Determine which views to show based on device
+  const viewsSelector = isMobile ? views?.mobileViews : views?.views;
+  
+  // Initialize active view from the first available view
+  const [activeView, setActiveView] = useState<string>(
+    viewsSelector?.[0] || "day"
   );
 
+  // Client-side initialization
   useEffect(() => {
-    if (!clientSide) return;
-    setIsMobile(window.innerWidth <= 768);
-    function handleResize() {
-      if (window && window.innerWidth <= 768) {
-        setIsMobile(true);
-      } else {
-        setIsMobile(false);
-      }
-    }
-
-    window && window.addEventListener("resize", handleResize);
-
-    return () => window && window.removeEventListener("resize", handleResize);
-  }, [clientSide]);
-
-  function handleAddEvent(selectedDay?: number) {
-    // Create the modal content with proper data
-    const startDate = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      selectedDay ?? new Date().getDate(),
-      0,
-      0,
-      0,
-      0
-    );
-
-    const endDate = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      selectedDay ?? new Date().getDate(),
-      23,
-      59,
-      59,
-      999
-    );
-
-    // Create a wrapper component to handle data passing
-    const ModalWrapper = () => {
-      const title =
-        CustomComponents?.CustomEventModal?.CustomAddEventModal?.title ||
-        "Add Event";
-
-      return (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">{title}</h2>
-        </div>
-      );
-    };
-
-    // Open the modal with the content
-    setOpen(
-      <CustomModal title="Add Event">
-        <AddEventModal
-          CustomAddEventModal={
-            CustomComponents?.CustomEventModal?.CustomAddEventModal?.CustomForm
-          }
-        />{" "}
-      </CustomModal>
-    );
-  }
-
-  const viewsSelector = isMobile ? views?.mobileViews : views?.views;
-
-  // Set initial active view
-  useEffect(() => {
-    if (viewsSelector?.length) {
-      setActiveView(viewsSelector[0]);
+    setClientSide(true);
+    
+    // Set initial mobile state
+    if (typeof window !== 'undefined') {
+      setIsMobile(window.innerWidth <= 768);
     }
   }, []);
+
+  // Handle responsive behavior
+  useEffect(() => {
+    if (!clientSide) return;
+    
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth <= 768);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [clientSide]);
+
+  // Handle view selection when mobile state changes
+  useEffect(() => {
+    if (viewsSelector && !viewsSelector.includes(activeView) && viewsSelector.length > 0) {
+      setActiveView(viewsSelector[0]);
+    }
+  }, [viewsSelector, activeView]);
+
+  // Open add event modal
+  const handleAddEvent = () => {
+    const modalTitle = CustomComponents?.CustomEventModal?.CustomAddEventModal?.title || "Add Event";
+    const CustomForm = CustomComponents?.CustomEventModal?.CustomAddEventModal?.CustomForm;
+    
+    setOpen(
+      <CustomModal title={modalTitle}>
+        {CustomForm ? (
+          <CustomForm
+            register={{}}
+            errors={{}}
+          />
+        ) : (
+          <AddEventModal
+            CustomAddEventModal={CustomForm}
+          />
+        )}
+      </CustomModal>
+    );
+  };
+
+  // Render view components
+  const renderViewComponent = (view: string) => {
+    const commonProps = {
+      classNames: classNames?.buttons,
+      prevButton: CustomComponents?.customButtons?.CustomPrevButton,
+      nextButton: CustomComponents?.customButtons?.CustomNextButton,
+      CustomEventComponent: CustomComponents?.CustomEventComponent,
+      CustomEventModal: CustomComponents?.CustomEventModal,
+    };
+
+    switch (view) {
+      case "day":
+        return <DailyView stopDayEventSummary={stopDayEventSummary} {...commonProps} />;
+      case "week":
+        return <WeeklyView {...commonProps} />;
+      case "month":
+        return <MonthView {...commonProps} />;
+      default:
+        return null;
+    }
+  };
+
+  // Render tab content
+  const renderTabContent = (viewType: string) => (
+    <TabsContent key={viewType} value={viewType}>
+      <AnimatePresence mode="wait">
+        <motion.div key={viewType} {...animationConfig}>
+          {renderViewComponent(viewType)}
+        </motion.div>
+      </AnimatePresence>
+    </TabsContent>
+  );
+
+  // Render tab trigger
+  const renderTabTrigger = (viewType: string) => {
+    let customIcon;
+    let defaultIcon;
+    let label;
+
+    switch (viewType) {
+      case "day":
+        customIcon = CustomComponents?.customTabs?.CustomDayTab;
+        defaultIcon = <CalendarDaysIcon size={15} />;
+        label = "Day";
+        break;
+      case "week":
+        customIcon = CustomComponents?.customTabs?.CustomWeekTab;
+        defaultIcon = <BsCalendarWeek />;
+        label = "Week";
+        break;
+      case "month":
+        customIcon = CustomComponents?.customTabs?.CustomMonthTab;
+        defaultIcon = <BsCalendarMonth />;
+        label = "Month";
+        break;
+      default:
+        return null;
+    }
+
+    return (
+      <TabsTrigger key={viewType} value={viewType}>
+        {customIcon ? (
+          <div className="flex items-center space-x-2">
+            {customIcon}
+            <span>{label}</span>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-2">
+            {defaultIcon}
+            <span>{label}</span>
+          </div>
+        )}
+      </TabsTrigger>
+    );
+  };
 
   return (
     <div className="flex w-full flex-col">
@@ -135,54 +189,19 @@ export default function SchedulerViewFilteration({
           >
             <div className="flex justify-between items-center mb-4">
               <TabsList className="grid grid-cols-3">
-                {viewsSelector?.includes("day") && (
-                  <TabsTrigger value="day">
-                    {CustomComponents?.customTabs?.CustomDayTab ? (
-                      CustomComponents.customTabs.CustomDayTab
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <CalendarDaysIcon size={15} />
-                        <span>Day</span>
-                      </div>
-                    )}
-                  </TabsTrigger>
-                )}
-
-                {viewsSelector?.includes("week") && (
-                  <TabsTrigger value="week">
-                    {CustomComponents?.customTabs?.CustomWeekTab ? (
-                      CustomComponents.customTabs.CustomWeekTab
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <BsCalendarWeek />
-                        <span>Week</span>
-                      </div>
-                    )}
-                  </TabsTrigger>
-                )}
-
-                {viewsSelector?.includes("month") && (
-                  <TabsTrigger value="month">
-                    {CustomComponents?.customTabs?.CustomMonthTab ? (
-                      CustomComponents.customTabs.CustomMonthTab
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <BsCalendarMonth />
-                        <span>Month</span>
-                      </div>
-                    )}
-                  </TabsTrigger>
+                {viewsSelector?.map(view => 
+                  viewsSelector.includes(view) && renderTabTrigger(view)
                 )}
               </TabsList>
 
               {/* Add Event Button */}
               {CustomComponents?.customButtons?.CustomAddEventButton ? (
-                <div onClick={() => handleAddEvent()}>
+                <div onClick={handleAddEvent}>
                   {CustomComponents?.customButtons.CustomAddEventButton}
                 </div>
               ) : (
                 <Button
-                  onClick={() => handleAddEvent()}
+                  onClick={handleAddEvent}
                   className={classNames?.buttons?.addEvent}
                   variant="default"
                 >
@@ -192,71 +211,8 @@ export default function SchedulerViewFilteration({
               )}
             </div>
 
-            {viewsSelector?.includes("day") && (
-              <TabsContent value="day">
-                <AnimatePresence mode="wait">
-                  <motion.div {...animationConfig}>
-                    <DailyView
-                      stopDayEventSummary={stopDayEventSummary}
-                      classNames={classNames?.buttons}
-                      prevButton={
-                        CustomComponents?.customButtons?.CustomPrevButton
-                      }
-                      nextButton={
-                        CustomComponents?.customButtons?.CustomNextButton
-                      }
-                      CustomEventComponent={
-                        CustomComponents?.CustomEventComponent
-                      }
-                      CustomEventModal={CustomComponents?.CustomEventModal}
-                    />
-                  </motion.div>
-                </AnimatePresence>
-              </TabsContent>
-            )}
-
-            {viewsSelector?.includes("week") && (
-              <TabsContent value="week">
-                <AnimatePresence mode="wait">
-                  <motion.div {...animationConfig}>
-                    <WeeklyView
-                      classNames={classNames?.buttons}
-                      prevButton={
-                        CustomComponents?.customButtons?.CustomPrevButton
-                      }
-                      nextButton={
-                        CustomComponents?.customButtons?.CustomNextButton
-                      }
-                      CustomEventComponent={
-                        CustomComponents?.CustomEventComponent
-                      }
-                      CustomEventModal={CustomComponents?.CustomEventModal}
-                    />
-                  </motion.div>
-                </AnimatePresence>
-              </TabsContent>
-            )}
-
-            {viewsSelector?.includes("month") && (
-              <TabsContent value="month">
-                <AnimatePresence mode="wait">
-                  <motion.div {...animationConfig}>
-                    <MonthView
-                      classNames={classNames?.buttons}
-                      prevButton={
-                        CustomComponents?.customButtons?.CustomPrevButton
-                      }
-                      nextButton={
-                        CustomComponents?.customButtons?.CustomNextButton
-                      }
-                      CustomEventComponent={
-                        CustomComponents?.CustomEventComponent
-                      }
-                      CustomEventModal={CustomComponents?.CustomEventModal}
-                    />
-                  </motion.div>
-                </AnimatePresence>
-              </TabsContent>
+            {viewsSelector?.map(view => 
+              viewsSelector.includes(view) && renderTabContent(view)
             )}
           </Tabs>
         </div>

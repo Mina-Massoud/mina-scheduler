@@ -6,10 +6,8 @@ import React, {
   useContext,
   useReducer,
   ReactNode,
-  Dispatch,
   useEffect,
 } from "react";
-import { z } from "zod";
 
 import {
   Action,
@@ -34,11 +32,6 @@ export const variants = [
   "warning",
   "danger",
 ] as const;
-
-// Initial state
-const initialState: SchedulerState = {
-  events: [],
-};
 
 // Reducer function
 const schedulerReducer = (

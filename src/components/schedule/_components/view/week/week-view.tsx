@@ -6,7 +6,7 @@ import { useModal } from "@/providers/modal-context";
 import AddEventModal from "@/components/schedule/_modals/add-event-modal";
 import EventStyled from "../event-component/event-styled";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Maximize2, ChevronLeft, Maximize } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, Maximize } from "lucide-react";
 import clsx from "clsx";
 import { Event, CustomEventModal } from "@/types";
 import CustomModal from "@/components/ui/custom-modal";
@@ -17,71 +17,20 @@ const hours = Array.from({ length: 24 }, (_, i) => {
   return `${hour}:00 ${ampm}`;
 });
 
-interface ChipData {
-  id: number;
-  color: "primary" | "warning" | "danger";
-  title: string;
-  description: string;
-}
-
-const chipData: ChipData[] = [
-  {
-    id: 1,
-    color: "primary",
-    title: "Ads Campaign Nr1",
-    description: "Day 1 of 5: Google Ads, Target Audience: SMB-Alpha",
-  },
-  {
-    id: 2,
-    color: "warning",
-    title: "Ads Campaign Nr2",
-    description:
-      "All Day: Day 2 of 5: AdSense + FB, Target Audience: SMB2-Delta3",
-  },
-  {
-    id: 3,
-    color: "danger",
-    title: "Critical Campaign Nr3",
-    description: "Day 3 of 5: High-Impact Ads, Target: E-Commerce Gamma",
-  },
-  {
-    id: 4,
-    color: "primary",
-    title: "Ads Campaign Nr4",
-    description: "Day 4 of 5: FB Ads, Audience: Retailers-Zeta",
-  },
-  {
-    id: 5,
-    color: "warning",
-    title: "Campaign Ending Soon",
-    description: "Final Day: Monitor closely, Audience: Delta2-Beta",
-  },
-];
-
 // Animation Variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1, // Stagger children animations
-    },
-  },
-};
-
 const itemVariants = {
   hidden: { opacity: 0, y: 5 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.12 } },
 };
 
 const pageTransitionVariants = {
-  enter: (direction: number) => ({
+  enter: () => ({
     opacity: 0,
   }),
   center: {
     opacity: 1,
   },
-  exit: (direction: number) => ({
+  exit: () => ({
     opacity: 0,
     transition: {
       opacity: { duration: 0.2, ease: "easeInOut" },
@@ -108,8 +57,7 @@ export default function WeeklyView({
   const [timelinePosition, setTimelinePosition] = useState<number>(0);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [colWidth, setColWidth] = useState<number[]>(Array(7).fill(1)); // Equal width columns by default
-  const [isResizing, setIsResizing] = useState<boolean>(false);
-  const [direction, setDirection] = useState<number>(0);
+  const [isResizing] = useState<boolean>(false);
   const { setOpen } = useModal();
 
   const daysOfWeek = getters?.getDaysInWeek(
@@ -170,14 +118,12 @@ export default function WeeklyView({
   }
 
   const handleNextWeek = useCallback(() => {
-    setDirection(1);
     const nextWeek = new Date(currentDate);
     nextWeek.setDate(currentDate.getDate() + 7);
     setCurrentDate(nextWeek);
   }, [currentDate]);
 
   const handlePrevWeek = useCallback(() => {
-    setDirection(-1);
     const prevWeek = new Date(currentDate);
     prevWeek.setDate(currentDate.getDate() - 7);
     setCurrentDate(prevWeek);
@@ -331,10 +277,9 @@ export default function WeeklyView({
         </div>
       </div>
       
-      <AnimatePresence initial={false} custom={direction} mode="wait">
+      <AnimatePresence initial={false} mode="wait">
         <motion.div
           key={currentDate.toISOString()}
-          custom={direction}
           variants={pageTransitionVariants}
           initial="enter"
           animate="center"
@@ -614,7 +559,7 @@ export default function WeeklyView({
                     }}
                   >
                     <AnimatePresence initial={false}>
-                      {visibleEvents?.map((event, eventIndex) => {
+                      {visibleEvents?.map((event) => {
                         // For better spacing, consider if this event is part of a time group
                         let eventsInSamePeriod = 1;
                         let periodIndex = 0;
@@ -630,7 +575,7 @@ export default function WeeklyView({
                         }
                         
                         // Customize styling parameters for events in the same time period
-                        const { height, left, maxWidth, minWidth, top, zIndex } =
+                        const { height, left, maxWidth, minWidth, top } =
                           handlers.handleEventStyling(
                             event, 
                             dayEvents, 

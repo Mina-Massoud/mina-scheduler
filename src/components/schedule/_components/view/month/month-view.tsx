@@ -17,13 +17,13 @@ import { Event, CustomEventModal } from "@/types";
 import CustomModal from "@/components/ui/custom-modal";
 
 const pageTransitionVariants = {
-  enter: (direction: number) => ({
+  enter: () => ({
     opacity: 0,
   }),
   center: {
     opacity: 1,
   },
-  exit: (direction: number) => ({
+  exit: () => ({
     opacity: 0,
     transition: {
       opacity: { duration: 0.2, ease: "easeInOut" },
@@ -48,7 +48,6 @@ export default function MonthView({
   const { setOpen } = useModal();
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [direction, setDirection] = useState<number>(0);
 
   const daysInMonth = getters.getDaysInMonth(
     currentDate.getMonth(),
@@ -56,7 +55,6 @@ export default function MonthView({
   );
 
   const handlePrevMonth = useCallback(() => {
-    setDirection(-1);
     const newDate = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() - 1,
@@ -66,7 +64,6 @@ export default function MonthView({
   }, [currentDate]);
 
   const handleNextMonth = useCallback(() => {
-    setDirection(1);
     const newDate = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() + 1,
@@ -128,17 +125,6 @@ export default function MonthView({
       }
     );
   }
-
-  const containerVariants = {
-    enter: { opacity: 0 },
-    center: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.02,
-      },
-    },
-    exit: { opacity: 0 },
-  };
 
   const itemVariants = {
     enter: { opacity: 0, y: 20 },
@@ -212,10 +198,9 @@ export default function MonthView({
           )}
         </div>
       </div>
-      <AnimatePresence initial={false} custom={direction} mode="wait">
+      <AnimatePresence initial={false} mode="wait">
         <motion.div
           key={`${currentDate.getFullYear()}-${currentDate.getMonth()}`}
-          custom={direction}
           variants={{
             ...pageTransitionVariants,
             center: {
